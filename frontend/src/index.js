@@ -3,85 +3,155 @@ import ReactDOM from 'react-dom/client';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || '';
 
+function StatusBadge({ ok }) {
+  return (
+    <span style={{
+      display: 'inline-block',
+      padding: '3px 10px',
+      borderRadius: '12px',
+      fontSize: '12px',
+      fontWeight: 'bold',
+      backgroundColor: ok ? '#d4edda' : '#f8d7da',
+      color: ok ? '#155724' : '#721c24',
+    }}>
+      {ok ? '✅ OK' : '❌ Erreur'}
+    </span>
+  );
+}
+
+function Card({ icon, title, children }) {
+  return (
+    <div style={{
+      background: 'white',
+      borderRadius: '12px',
+      padding: '20px 24px',
+      marginBottom: '16px',
+      boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+      borderLeft: '4px solid #4f46e5',
+    }}>
+      <h3 style={{ margin: '0 0 12px 0', color: '#1e1b4b', fontSize: '16px' }}>
+        {icon} {title}
+      </h3>
+      {children}
+    </div>
+  );
+}
+
+function Row({ label, value }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #f0f0f0' }}>
+      <span style={{ color: '#6b7280', fontSize: '14px' }}>{label}</span>
+      <span style={{ color: '#111827', fontWeight: '500', fontSize: '14px' }}>{value}</span>
+    </div>
+  );
+}
+
 function App() {
-  const [health, setHealth] = useState(null);
-  const [info, setInfo] = useState(null);
-  const [env, setEnv] = useState(null);
+  const [data, setData] = useState({ health: null, info: null, env: null, db: null });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchAll = async () => {
       try {
-        const [healthRes, infoRes, envRes] = await Promise.all([
-          fetch(`${BACKEND_URL}/health`),
-          fetch(`${BACKEND_URL}/info`),
-          fetch(`${BACKEND_URL}/env`),
+        const [h, i, e, d] = await Promise.all([
+          fetch(`${BACKEND_URL}/health`).then(r => r.json()),
+          fetch(`${BACKEND_URL}/info`).then(r => r.json()),
+          fetch(`${BACKEND_URL}/env`).then(r => r.json()),
+          fetch(`${BACKEND_URL}/db`).then(r => r.json()),
         ]);
-        setHealth(await healthRes.json());
-        setInfo(await infoRes.json());
-        setEnv(await envRes.json());
+        setData({ health: h, info: i, env: e, db: d });
       } catch (err) {
-        setError("Impossible de joindre le backend Flask : " + err.message);
+        setError(err.message);
       } finally {
         setLoading(false);
       }
     };
-    fetchData();
+    fetchAll();
   }, []);
 
-  const styles = {
-    container: {
-      fontFamily: 'Arial, sans-serif',
-      maxWidth: '800px',
-      margin: '40px auto',
-      padding: '20px',
-      backgroundColor: '#f5f5f5',
-      borderRadius: '8px',
-    },
-    title: { color: '#333', borderBottom: '2px solid #4CAF50', paddingBottom: '10px' },
-    card: {
-      backgroundColor: 'white',
-      padding: '15px',
-      margin: '15px 0',
-      borderRadius: '6px',
-      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-    },
-    label: { fontWeight: 'bold', color: '#555' },
-    value: { color: '#4CAF50' },
-    error: { color: 'red', padding: '10px', backgroundColor: '#ffe0e0', borderRadius: '4px' },
-  };
-
   return (
-    <div style={styles.container}>
-      <h1 style={styles.title}>🚀 Flask Render Platform</h1>
-      <p><strong>Student:</strong> Huart Antony</p>
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      padding: '40px 20px',
+      fontFamily: "'Segoe UI', system-ui, sans-serif",
+    }}>
+      <div style={{ maxWidth: '600px', margin: '0 auto' }}>
 
-      {loading && <p>Chargement des données depuis le backend...</p>}
-      {error && <div style={styles.error}>⚠️ {error}</div>}
-
-      {health && (
-        <div style={styles.card}>
-          <h3>🩺 Health Check</h3>
-          <p style={styles.label}>Status: <span style={styles.value}>{health.status}</span></p>
+        {/* Header */}
+        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+          <h1 style={{ color: 'white', fontSize: '28px', margin: '0 0 8px 0' }}>
+            🚀 Flask Render Platform
+          </h1>
+          <p style={{ color: 'rgba(255,255,255,0.8)', margin: 0, fontSize: '15px' }}>
+            Déployé par <strong>Huart Antony</strong>
+          </p>
+          <div style={{
+            display: 'inline-block',
+            marginTop: '10px',
+            padding: '4px 14px',
+            borderRadius: '20px',
+            background: 'rgba(255,255,255,0.2)',
+            color: 'white',
+            fontSize: '12px',
+          }}>
+            Flask · Docker · GHCR · Terraform · Render
+          </div>
         </div>
-      )}
 
-      {info && (
-        <div style={styles.card}>
-          <h3>ℹ️ Info</h3>
-          <p style={styles.label}>App: <span style={styles.value}>{info.app}</span></p>
-          <p style={styles.label}>Student: <span style={styles.value}>{info.student}</span></p>
-          <p style={styles.label}>Version: <span style={styles.value}>{info.version}</span></p>
-        </div>
-      )}
+        {loading && (
+          <div style={{ textAlign: 'center', color: 'white', padding: '40px' }}>
+            <div style={{ fontSize: '32px', marginBottom: '12px' }}>⏳</div>
+            Connexion au backend Flask...
+          </div>
+        )}
 
-      {env && (
-        <div style={styles.card}>
-          <h3>🌍 Environnement</h3>
-          <p style={styles.label}>ENV: <span style={styles.value}>{env.env}</span></p>
+        {error && (
+          <Card icon="⚠️" title="Erreur de connexion">
+            <p style={{ color: '#dc2626', margin: 0, fontSize: '14px' }}>{error}</p>
+          </Card>
+        )}
+
+        {!loading && !error && (
+          <>
+            <Card icon="🩺" title="Health Check">
+              <Row label="Status" value={data.health?.status} />
+              <div style={{ marginTop: '8px' }}>
+                <StatusBadge ok={data.health?.status?.includes('ok')} />
+              </div>
+            </Card>
+
+            <Card icon="ℹ️" title="Informations">
+              <Row label="Application" value={data.info?.app} />
+              <Row label="Étudiant" value={data.info?.student} />
+              <Row label="Version" value={data.info?.version} />
+            </Card>
+
+            <Card icon="🌍" title="Environnement">
+              <Row label="ENV" value={data.env?.env} />
+              <div style={{ marginTop: '8px' }}>
+                <StatusBadge ok={data.env?.env === 'production'} />
+              </div>
+            </Card>
+
+            <Card icon="🗄️" title="Base de données PostgreSQL">
+              <Row label="Status" value={data.db?.status} />
+              {data.db?.postgresql && (
+                <Row label="Version" value={data.db.postgresql.split(' ').slice(0, 2).join(' ')} />
+              )}
+              <div style={{ marginTop: '8px' }}>
+                <StatusBadge ok={data.db?.status === 'connected'} />
+              </div>
+            </Card>
+          </>
+        )}
+
+        {/* Footer */}
+        <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.6)', fontSize: '12px', marginTop: '24px' }}>
+          React · Flask · PostgreSQL · Adminer · Terraform
         </div>
-      )}
+      </div>
     </div>
   );
 }
