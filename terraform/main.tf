@@ -17,6 +17,12 @@ variable "github_actor" {
   type        = string
 }
 
+variable "database_url" {
+  description = "PostgreSQL connection string from Render"
+  type        = string
+  default     = ""
+}
+
 resource "render_web_service" "flask_app" {
   name   = "flask-render-iac-${var.github_actor}"
   plan   = "free"
@@ -29,4 +35,32 @@ resource "render_web_service" "flask_app" {
     }
   }
 
+  env_vars = {
+    ENV = {
+      value = "production"
+    }
+    DATABASE_URL = {
+      value = var.database_url
+    }
+  }
+
+}
+
+resource "render_web_service" "adminer" {
+  name   = "adminer-${var.github_actor}"
+  plan   = "free"
+  region = "frankfurt"
+
+  runtime_source = {
+    image = {
+      image_url = "docker.io/adminer"
+      tag       = "latest"
+    }
+  }
+
+  env_vars = {
+    ADMINER_DEFAULT_SERVER = {
+      value = "postgres"
+    }
+  }
 }
